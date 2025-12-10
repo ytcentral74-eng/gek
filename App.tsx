@@ -15,6 +15,44 @@ const NEW_USER_TEMPLATE: Omit<User, 'id' | 'username' | 'fullName'> = {
   following: 0
 };
 
+const LOGIN_MESSAGES = [
+  { 
+    title: "Capture Real Life.", 
+    subtitle: "Share your world instantly with Gek.",
+    image: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?q=80&w=800&auto=format&fit=crop"
+  },
+  { 
+    title: "Express Yourself.", 
+    subtitle: "Post photos, stories, and moments that matter.",
+    image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop"
+  },
+  { 
+    title: "Connect Globally.", 
+    subtitle: "Join a community of creators and friends.",
+    image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop"
+  },
+  { 
+    title: "Discover Trends.", 
+    subtitle: "See what's happening in the world right now.",
+    image: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=800&auto=format&fit=crop"
+  },
+  { 
+    title: "Be Authentic.", 
+    subtitle: "No filters needed. Just you and your vibe.",
+    image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=800&auto=format&fit=crop"
+  },
+  {
+    title: "Share Moments.",
+    subtitle: "Every picture tells a story. What's yours?",
+    image: "https://images.unsplash.com/photo-1492633423870-43d1cd2775eb?q=80&w=800&auto=format&fit=crop"
+  },
+  {
+    title: "Inspire Others.",
+    subtitle: "Creativity is contagious. Pass it on.",
+    image: "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?q=80&w=800&auto=format&fit=crop"
+  }
+];
+
 // Start with an empty feed
 const INITIAL_POSTS: Post[] = [];
 
@@ -26,6 +64,7 @@ const App: React.FC = () => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [messageIndex, setMessageIndex] = useState(0);
   
   // Registry of all users who have ever logged in (persisted in localStorage)
   const [registry, setRegistry] = useState<User[]>([]);
@@ -57,6 +96,14 @@ const App: React.FC = () => {
         localStorage.removeItem('gek_user');
       }
     }
+  }, []);
+
+  // Text rotation effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessageIndex((prev) => (prev + 1) % LOGIN_MESSAGES.length);
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -214,28 +261,25 @@ const App: React.FC = () => {
         {/* Main Login Container */}
         <main className="flex w-full max-w-[850px] items-center justify-center gap-8 min-h-screen md:min-h-0">
           
-          {/* Left Side - Phone Visual (Desktop only) */}
-          <div className="hidden md:block relative w-[380px] h-[580px] flex-shrink-0">
-             <div className="absolute inset-0 bg-black rounded-[2.5rem] border-[8px] border-black overflow-hidden shadow-2xl">
-                <div className="w-full h-full bg-white flex flex-col relative">
-                    {/* Header bar of fake phone */}
-                    <div className="h-14 border-b border-gray-100 flex items-center px-4 justify-between z-10 bg-white/90 backdrop-blur-sm">
-                       <span className="font-bold text-xl bg-gradient-to-tr from-gek-400 to-purple-600 bg-clip-text text-transparent" style={{ fontFamily: 'cursive' }}>Gek</span>
-                    </div>
-                    {/* Background Image */}
-                    <img 
-                      src="https://picsum.photos/seed/login_showcase/400/800" 
-                      className="absolute inset-0 w-full h-full object-cover"
-                      alt="App Preview"
-                    />
-                    {/* Overlay Text */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-8">
-                        <div className="text-white mb-8">
-                            <p className="font-bold text-2xl mb-2">Capture Real Life.</p>
-                            <p className="text-sm opacity-90">Share your world instantly with Gek.</p>
-                        </div>
-                    </div>
-                </div>
+          {/* Left Side - Image Slider (Desktop only) - No Phone Frame */}
+          <div className="hidden md:block relative w-[400px] h-[630px] flex-shrink-0 rounded-2xl overflow-hidden shadow-2xl">
+             {/* Background Image - Rotates with messages */}
+             <img 
+               key={`img-${messageIndex}`}
+               src={LOGIN_MESSAGES[messageIndex].image} 
+               className="absolute inset-0 w-full h-full object-cover animate-[fadeIn_1s_ease-in-out]"
+               alt="App Preview"
+             />
+             {/* Overlay Text */}
+             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-10">
+                 <div className="text-white mb-8">
+                     <p key={`title-${messageIndex}`} className="font-bold text-3xl mb-3 animate-[fadeIn_0.5s_ease-in-out] drop-shadow-md leading-tight">
+                       {LOGIN_MESSAGES[messageIndex].title}
+                     </p>
+                     <p key={`sub-${messageIndex}`} className="text-lg opacity-90 animate-[fadeIn_0.8s_ease-in-out] drop-shadow-sm font-medium">
+                       {LOGIN_MESSAGES[messageIndex].subtitle}
+                     </p>
+                 </div>
              </div>
           </div>
 
@@ -244,7 +288,7 @@ const App: React.FC = () => {
             
             {/* Login Box */}
             <div className="bg-white md:border md:border-gray-300 p-8 flex flex-col items-center rounded-sm">
-              <h1 className="text-5xl font-bold bg-gradient-to-tr from-gek-400 to-purple-600 bg-clip-text text-transparent mb-8 mt-2" style={{ fontFamily: 'cursive' }}>Gek</h1>
+              <h1 className="text-4xl font-bold text-black mb-8 mt-2 tracking-tight">Gek</h1>
               
               <form onSubmit={handleLogin} className="w-full space-y-2">
                 <input 
@@ -259,7 +303,6 @@ const App: React.FC = () => {
                   type="password" 
                   placeholder="Password" 
                   className="w-full bg-gray-50 border border-gray-300 rounded-sm px-2 py-2.5 text-xs text-black focus:border-gray-400 outline-none transition-colors placeholder-gray-500"
-                  defaultValue="password123" 
                 />
                 <button 
                   type="submit" 
@@ -286,21 +329,12 @@ const App: React.FC = () => {
                 <p className="text-sm text-black">Don't have an account? <button onClick={() => alert("Just enter a new username above to sign up!")} className="text-gek-500 font-semibold cursor-pointer ml-1">Sign up</button></p>
             </div>
 
-            <div className="text-center mt-2">
-               <p className="text-sm text-black mb-4">Get the app.</p>
-               <div className="flex justify-center gap-2 h-10">
-                  <img src="https://static.cdninstagram.com/rsrc.php/v3/yt/r/Yfc020c87j0.png" alt="App Store" className="h-full cursor-pointer" />
-                  <img src="https://static.cdninstagram.com/rsrc.php/v3/yz/r/c5Rp7Ym-Klz.png" alt="Google Play" className="h-full cursor-pointer" />
-               </div>
-            </div>
-
           </div>
         </main>
         
         {/* Footer (Desktop) */}
         <footer className="hidden md:block mt-8 pb-4 text-center w-full">
            <div className="flex justify-center gap-4 text-xs text-gray-500 flex-wrap px-4 mb-2">
-              <span className="cursor-pointer hover:underline">Meta</span>
               <span className="cursor-pointer hover:underline">About</span>
               <span className="cursor-pointer hover:underline">Blog</span>
               <span className="cursor-pointer hover:underline">Jobs</span>
@@ -310,7 +344,7 @@ const App: React.FC = () => {
               <span className="cursor-pointer hover:underline">Terms</span>
            </div>
            <div className="text-xs text-gray-500">
-              © 2024 Gek from GekVibe
+              © 2025 Gek from GekVibe
            </div>
         </footer>
       </div>
@@ -324,7 +358,7 @@ const App: React.FC = () => {
       {/* Sidebar (Desktop) */}
       <div className="hidden md:flex flex-col w-[245px] h-screen border-r border-gray-200 fixed left-0 top-0 p-4 z-20 bg-white">
         <div className="mb-8 px-2">
-           <h1 className="text-3xl font-bold bg-gradient-to-tr from-gek-400 to-purple-600 bg-clip-text text-transparent cursor-pointer" style={{ fontFamily: 'cursive' }} onClick={() => setView(View.FEED)}>Gek</h1>
+           <h1 className="text-2xl font-bold text-black cursor-pointer tracking-tight" onClick={() => setView(View.FEED)}>Gek</h1>
         </div>
         <nav className="flex-1 space-y-2">
           <NavItem icon={<HomeIcon active={view === View.FEED} />} label="Home" active={view === View.FEED} onClick={() => setView(View.FEED)} />
@@ -365,7 +399,7 @@ const App: React.FC = () => {
           
           {/* Mobile Header */}
           <div className="md:hidden sticky top-0 bg-white/90 backdrop-blur-md z-30 border-b border-gray-200 flex justify-between items-center p-4">
-             <h1 className="text-2xl font-bold bg-gradient-to-tr from-gek-400 to-purple-600 bg-clip-text text-transparent" style={{ fontFamily: 'cursive' }}>Gek</h1>
+             <h1 className="text-xl font-bold text-black" onClick={() => setView(View.FEED)}>Gek</h1>
              <div className="flex gap-4">
                 <button onClick={() => setView(View.NOTIFICATIONS)}>
                   <HeartIcon filled={view === View.NOTIFICATIONS} />

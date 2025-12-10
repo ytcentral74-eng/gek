@@ -208,11 +208,15 @@ const Profile: React.FC<ProfileProps> = ({ user, posts, isCurrentUser, onUpdateU
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-3 gap-1 md:gap-4 px-0 md:px-0">
+      <div className="grid grid-cols-3 gap-1 md:gap-6 lg:gap-8 px-0 md:px-0">
         {posts.map(post => (
-          <div key={post.id} className="aspect-square bg-gray-100 group relative cursor-pointer overflow-hidden">
-            <img src={post.imageUrl} alt="" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 text-white font-bold">
+          <div key={post.id} className="aspect-square bg-gray-100 group relative cursor-pointer overflow-hidden rounded-sm md:rounded-md">
+            <img 
+              src={post.imageUrl} 
+              alt="" 
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+            />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 text-white font-bold backdrop-blur-[2px]">
                 <div className="flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="currentColor" strokeWidth="0"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
                     {post.likes}
@@ -225,21 +229,4 @@ const Profile: React.FC<ProfileProps> = ({ user, posts, isCurrentUser, onUpdateU
           </div>
         ))}
         {posts.length === 0 && (
-            <div className="col-span-3 py-20 text-center text-gray-500">
-                <div className="flex justify-center mb-4">
-                    <CameraIcon />
-                </div>
-                <h3 className="text-xl font-bold">No posts yet</h3>
-            </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// Import UserIcon for fallback
-const UserIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-);
-
-export default Profile;
+            <div className="col-span-3
