@@ -122,12 +122,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onUserClic
 
       {/* Comments Section */}
       <div className="px-3 pt-1">
-        {post.comments.length > 0 && (
+        {post.comments.length > 2 && (
           <button 
             className="text-gray-500 text-sm mb-1 cursor-pointer"
             onClick={() => setShowAllComments(!showAllComments)}
           >
-            {showAllComments ? 'Hide comments' : `View all ${post.comments.length} comments`}
+            {showAllComments ? 'Show less' : `View all ${post.comments.length} comments`}
           </button>
         )}
         
