@@ -209,38 +209,110 @@ const App: React.FC = () => {
   // --- LOGIN VIEW ---
   if (!currentUser || view === View.LOGIN) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white text-black p-4">
-        <div className="w-full max-w-xs space-y-8">
-          <div className="text-center">
-            <h1 className="text-5xl font-bold bg-gradient-to-tr from-gek-400 to-purple-600 bg-clip-text text-transparent mb-2" style={{ fontFamily: 'cursive' }}>Gek</h1>
-            <p className="text-gray-500">Connect, Share, Inspire.</p>
+      <div className="min-h-screen bg-white md:bg-gray-50 flex flex-col items-center justify-center p-0 md:p-4">
+        
+        {/* Main Login Container */}
+        <main className="flex w-full max-w-[850px] items-center justify-center gap-8 min-h-screen md:min-h-0">
+          
+          {/* Left Side - Phone Visual (Desktop only) */}
+          <div className="hidden md:block relative w-[380px] h-[580px] flex-shrink-0">
+             <div className="absolute inset-0 bg-black rounded-[2.5rem] border-[8px] border-black overflow-hidden shadow-2xl">
+                <div className="w-full h-full bg-white flex flex-col relative">
+                    {/* Header bar of fake phone */}
+                    <div className="h-14 border-b border-gray-100 flex items-center px-4 justify-between z-10 bg-white/90 backdrop-blur-sm">
+                       <span className="font-bold text-xl bg-gradient-to-tr from-gek-400 to-purple-600 bg-clip-text text-transparent" style={{ fontFamily: 'cursive' }}>Gek</span>
+                    </div>
+                    {/* Background Image */}
+                    <img 
+                      src="https://picsum.photos/seed/login_showcase/400/800" 
+                      className="absolute inset-0 w-full h-full object-cover"
+                      alt="App Preview"
+                    />
+                    {/* Overlay Text */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-8">
+                        <div className="text-white mb-8">
+                            <p className="font-bold text-2xl mb-2">Capture Real Life.</p>
+                            <p className="text-sm opacity-90">Share your world instantly with Gek.</p>
+                        </div>
+                    </div>
+                </div>
+             </div>
           </div>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input 
-              type="text" 
-              placeholder="Username" 
-              className="w-full bg-gray-50 border border-gray-300 rounded-md px-4 py-3 text-sm focus:border-gek-500 outline-none transition-colors"
-              value={usernameInput}
-              onChange={(e) => setUsernameInput(e.target.value)}
-              required
-            />
-            <input 
-              type="password" 
-              placeholder="Password" 
-              className="w-full bg-gray-50 border border-gray-300 rounded-md px-4 py-3 text-sm focus:border-gek-500 outline-none transition-colors"
-              defaultValue="password123" // Fake
-            />
-            <button 
-              type="submit" 
-              className="w-full bg-gek-600 hover:bg-gek-500 text-white font-semibold py-3 rounded-md transition-colors"
-            >
-              Log In / Sign Up
-            </button>
-          </form>
-          <div className="text-center text-sm text-gray-500">
-             <p>Enter any username to create an account or sign back in.</p>
+
+          {/* Right Side - Login Form */}
+          <div className="w-full max-w-[350px] flex flex-col gap-3 p-4 md:p-0">
+            
+            {/* Login Box */}
+            <div className="bg-white md:border md:border-gray-300 p-8 flex flex-col items-center rounded-sm">
+              <h1 className="text-5xl font-bold bg-gradient-to-tr from-gek-400 to-purple-600 bg-clip-text text-transparent mb-8 mt-2" style={{ fontFamily: 'cursive' }}>Gek</h1>
+              
+              <form onSubmit={handleLogin} className="w-full space-y-2">
+                <input 
+                  type="text" 
+                  placeholder="Phone number, username, or email" 
+                  className="w-full bg-gray-50 border border-gray-300 rounded-sm px-2 py-2.5 text-xs text-black focus:border-gray-400 outline-none transition-colors placeholder-gray-500"
+                  value={usernameInput}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                  required
+                />
+                <input 
+                  type="password" 
+                  placeholder="Password" 
+                  className="w-full bg-gray-50 border border-gray-300 rounded-sm px-2 py-2.5 text-xs text-black focus:border-gray-400 outline-none transition-colors placeholder-gray-500"
+                  defaultValue="password123" 
+                />
+                <button 
+                  type="submit" 
+                  className="w-full bg-gek-500 hover:bg-gek-600 text-white font-semibold py-1.5 rounded-[4px] text-sm transition-colors mt-2"
+                >
+                  Log in
+                </button>
+              </form>
+
+              <div className="flex items-center w-full my-4">
+                  <div className="h-px bg-gray-300 flex-1"></div>
+                  <span className="px-4 text-xs text-gray-400 font-semibold">OR</span>
+                  <div className="h-px bg-gray-300 flex-1"></div>
+              </div>
+
+              <button className="text-gek-900 font-semibold text-sm flex items-center gap-2 hover:opacity-80">
+                  <span className="text-sm">Log in with Facebook</span>
+              </button>
+              <button className="text-xs text-gek-900/80 mt-4 hover:opacity-80">Forgot password?</button>
+            </div>
+
+            {/* Sign Up Box */}
+            <div className="bg-white md:border md:border-gray-300 p-6 flex items-center justify-center rounded-sm">
+                <p className="text-sm text-black">Don't have an account? <button onClick={() => alert("Just enter a new username above to sign up!")} className="text-gek-500 font-semibold cursor-pointer ml-1">Sign up</button></p>
+            </div>
+
+            <div className="text-center mt-2">
+               <p className="text-sm text-black mb-4">Get the app.</p>
+               <div className="flex justify-center gap-2 h-10">
+                  <img src="https://static.cdninstagram.com/rsrc.php/v3/yt/r/Yfc020c87j0.png" alt="App Store" className="h-full cursor-pointer" />
+                  <img src="https://static.cdninstagram.com/rsrc.php/v3/yz/r/c5Rp7Ym-Klz.png" alt="Google Play" className="h-full cursor-pointer" />
+               </div>
+            </div>
+
           </div>
-        </div>
+        </main>
+        
+        {/* Footer (Desktop) */}
+        <footer className="hidden md:block mt-8 pb-4 text-center w-full">
+           <div className="flex justify-center gap-4 text-xs text-gray-500 flex-wrap px-4 mb-2">
+              <span className="cursor-pointer hover:underline">Meta</span>
+              <span className="cursor-pointer hover:underline">About</span>
+              <span className="cursor-pointer hover:underline">Blog</span>
+              <span className="cursor-pointer hover:underline">Jobs</span>
+              <span className="cursor-pointer hover:underline">Help</span>
+              <span className="cursor-pointer hover:underline">API</span>
+              <span className="cursor-pointer hover:underline">Privacy</span>
+              <span className="cursor-pointer hover:underline">Terms</span>
+           </div>
+           <div className="text-xs text-gray-500">
+              © 2024 Gek from GekVibe
+           </div>
+        </footer>
       </div>
     );
   }
