@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, Post, View } from './types';
+import { User, Post, View, Comment } from './types';
 import PostCard from './components/PostCard';
 import Profile from './components/Profile';
 import UploadModal from './components/UploadModal';
-import { HomeIcon, SearchIcon, PlusSquareIcon, HeartIcon, UserIcon } from './components/Icons';
+import { HomeIcon, SearchIcon, PlusSquareIcon, HeartIcon, UserIcon, CameraIcon } from './components/Icons';
 
 // --- MOCK DATA ---
 const MOCK_USER: User = {
@@ -13,34 +13,12 @@ const MOCK_USER: User = {
   avatar: 'https://picsum.photos/150/150',
   banner: 'https://picsum.photos/800/200',
   bio: 'Digital explorer. 📸\nBuilding the future of social media with React.',
-  followers: 1250,
-  following: 420
+  followers: 0,
+  following: 0
 };
 
-const INITIAL_POSTS: Post[] = [
-  {
-    id: '1',
-    userId: 'user-2',
-    user: { ...MOCK_USER, id: 'user-2', username: 'travel_junkie', avatar: 'https://picsum.photos/151/151' },
-    imageUrl: 'https://picsum.photos/600/600?random=1',
-    caption: 'Lost in the city lights 🌃 #nightlife #vibes',
-    likes: 89,
-    comments: 12,
-    timestamp: Date.now() - 3600000,
-    likedByCurrentUser: false
-  },
-  {
-    id: '2',
-    userId: 'user-3',
-    user: { ...MOCK_USER, id: 'user-3', username: 'art_daily', avatar: 'https://picsum.photos/152/152' },
-    imageUrl: 'https://picsum.photos/600/600?random=2',
-    caption: 'Abstract thoughts on a Tuesday. What do you see? 🎨',
-    likes: 245,
-    comments: 45,
-    timestamp: Date.now() - 7200000,
-    likedByCurrentUser: true
-  }
-];
+// Start with an empty feed
+const INITIAL_POSTS: Post[] = [];
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -82,6 +60,28 @@ const App: React.FC = () => {
           ...p,
           likedByCurrentUser: isNowLiked,
           likes: isNowLiked ? p.likes + 1 : p.likes - 1
+        };
+      }
+      return p;
+    }));
+  };
+
+  const handleComment = (postId: string, text: string) => {
+    if (!currentUser) return;
+    
+    const newComment: Comment = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      userId: currentUser.id,
+      username: currentUser.username,
+      text: text,
+      timestamp: Date.now()
+    };
+
+    setPosts(prevPosts => prevPosts.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          comments: [...p.comments, newComment]
         };
       }
       return p;
@@ -164,11 +164,14 @@ const App: React.FC = () => {
             onClick={() => handleGoToProfile(currentUser)} 
           />
         </nav>
-        <div className="px-2">
-            <button className="flex items-center gap-4 p-3 w-full hover:bg-gray-100 rounded-lg transition-colors text-left">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-                <span>More</span>
-            </button>
+        <div className="px-4 py-6 mt-auto">
+            <div className="flex items-center gap-2 text-gray-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M14.83 14.83a4 4 0 1 1 0-5.66"></path>
+                </svg>
+                <span className="text-sm font-semibold tracking-wide">from GekVibe</span>
+            </div>
         </div>
       </div>
 
@@ -190,10 +193,27 @@ const App: React.FC = () => {
                  <PostCard 
                   key={post.id} 
                   post={post} 
-                  onLike={handleLikePost} 
+                  onLike={handleLikePost}
+                  onComment={handleComment} 
                   onUserClick={handleGoToProfile}
                  />
                ))}
+               
+               {posts.length === 0 && (
+                 <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+                    <div className="mb-4 text-gray-300">
+                      <CameraIcon />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2 text-black">Welcome to Gek!</h3>
+                    <p className="text-center">Follow people or create your first post<br/>to get started.</p>
+                    <button 
+                      onClick={() => setIsUploadOpen(true)}
+                      className="mt-6 text-gek-600 font-semibold hover:text-gek-500"
+                    >
+                      Create Post
+                    </button>
+                 </div>
+               )}
             </div>
           )}
 

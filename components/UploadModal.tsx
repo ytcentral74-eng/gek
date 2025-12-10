@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { User, Post } from '../types';
-import { generateImageCaption } from '../services/geminiService';
+import { generateImageCaption, searchPlaces } from '../services/geminiService';
 import { SparklesIcon } from './Icons';
 
 interface UploadModalProps {
@@ -12,9 +12,32 @@ interface UploadModalProps {
 const UploadModal: React.FC<UploadModalProps> = ({ user, onClose, onUpload }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
+  const [location, setLocation] = useState('');
   const [step, setStep] = useState<'SELECT' | 'EDIT'>('SELECT');
   const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Location Search State
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationResults, setLocationResults] = useState<string[]>([]);
+  const [isSearchingPlaces, setIsSearchingPlaces] = useState(false);
+
+  // Debounce search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (locationQuery.length > 2) {
+        setIsSearchingPlaces(true);
+        const results = await searchPlaces(locationQuery);
+        setLocationResults(results);
+        setIsSearchingPlaces(false);
+      } else {
+        setLocationResults([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [locationQuery]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,8 +72,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ user, onClose, onUpload }) =>
       user: user,
       imageUrl: selectedImage,
       caption: caption,
+      location: location || undefined,
       likes: 0,
-      comments: 0,
+      comments: [],
       timestamp: Date.now(),
       likedByCurrentUser: false
     };
@@ -100,12 +124,12 @@ const UploadModal: React.FC<UploadModalProps> = ({ user, onClose, onUpload }) =>
           ) : (
             <>
               {/* Image Preview (Left) */}
-              <div className="md:w-2/3 bg-gray-50 flex items-center justify-center">
+              <div className="md:w-2/3 bg-gray-50 flex items-center justify-center bg-black">
                 <img src={selectedImage || ''} alt="Preview" className="max-w-full max-h-[500px] object-contain" />
               </div>
 
               {/* Edit Details (Right) */}
-              <div className="md:w-1/3 border-l border-gray-200 flex flex-col">
+              <div className="md:w-1/3 border-l border-gray-200 flex flex-col relative">
                 <div className="p-4 flex items-center gap-3 border-b border-gray-200">
                   <img src={user.avatar} className="w-8 h-8 rounded-full" />
                   <span className="font-semibold text-sm text-black">{user.username}</span>
@@ -131,11 +155,57 @@ const UploadModal: React.FC<UploadModalProps> = ({ user, onClose, onUpload }) =>
                   </div>
                 </div>
 
-                <div className="p-4 border-t border-gray-200">
-                  <div className="flex justify-between items-center text-gray-500 text-sm">
-                    <span>Add location</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                  </div>
+                {/* Location Section */}
+                <div className="border-t border-gray-200">
+                  {!isSearchingLocation ? (
+                    <div 
+                      className="p-4 flex justify-between items-center text-gray-500 text-sm cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => setIsSearchingLocation(true)}
+                    >
+                      <span className={`${location ? 'text-black' : ''}`}>{location || 'Add location'}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </div>
+                  ) : (
+                    <div className="p-2 relative">
+                       <div className="flex items-center border-b border-gek-500 pb-1">
+                          <input 
+                            type="text"
+                            autoFocus
+                            placeholder="Find a location"
+                            className="w-full p-2 text-sm outline-none"
+                            value={locationQuery}
+                            onChange={(e) => setLocationQuery(e.target.value)}
+                          />
+                          <button onClick={() => { setIsSearchingLocation(false); setLocationQuery(''); }} className="text-gray-400 p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
+                       </div>
+                       
+                       {/* Search Results Dropdown */}
+                       <div className="max-h-[200px] overflow-y-auto bg-white">
+                          {isSearchingPlaces && (
+                            <div className="p-3 text-xs text-gray-400">Searching...</div>
+                          )}
+                          {!isSearchingPlaces && locationResults.map((place, index) => (
+                             <div 
+                              key={index} 
+                              className="p-3 text-sm hover:bg-gray-100 cursor-pointer border-b border-gray-50 last:border-0"
+                              onClick={() => {
+                                setLocation(place);
+                                setIsSearchingLocation(false);
+                                setLocationQuery('');
+                                setLocationResults([]);
+                              }}
+                             >
+                               {place}
+                             </div>
+                          ))}
+                          {!isSearchingPlaces && locationQuery.length > 2 && locationResults.length === 0 && (
+                             <div className="p-3 text-xs text-gray-400">No locations found</div>
+                          )}
+                       </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </>

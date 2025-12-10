@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -33,5 +33,34 @@ export const generateImageCaption = async (base64Image: string, promptContext?: 
   } catch (error) {
     console.error("Gemini API Error:", error);
     return "Caught in the moment. #gek";
+  }
+};
+
+/**
+ * Searches for real-world places based on a query string.
+ */
+export const searchPlaces = async (query: string): Promise<string[]> => {
+  if (!query || query.length < 2) return [];
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `List up to 5 distinct real-world cities, countries, or famous places that match the search term "${query}". Return only the names.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
+        }
+      }
+    });
+
+    const text = response.text;
+    if (!text) return [];
+    
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Gemini Place Search Error:", error);
+    return [];
   }
 };

@@ -9,14 +9,23 @@ export interface User {
   following: number;
 }
 
+export interface Comment {
+  id: string;
+  userId: string;
+  username: string;
+  text: string;
+  timestamp: number;
+}
+
 export interface Post {
   id: string;
   userId: string;
   user: User; // Embedded user for simpler mock logic
   imageUrl: string;
   caption: string;
+  location?: string;
   likes: number;
-  comments: number;
+  comments: Comment[];
   timestamp: number;
   likedByCurrentUser?: boolean;
 }

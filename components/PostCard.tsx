@@ -5,17 +5,29 @@ import { HeartIcon, MessageCircleIcon } from './Icons';
 interface PostCardProps {
   post: Post;
   onLike: (id: string) => void;
+  onComment: (postId: string, text: string) => void;
   onUserClick: (user: User) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onLike, onUserClick }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onUserClick }) => {
   const [isLiked, setIsLiked] = useState(post.likedByCurrentUser);
   const [likesCount, setLikesCount] = useState(post.likes);
+  const [commentText, setCommentText] = useState('');
+  const [showAllComments, setShowAllComments] = useState(false);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
     setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
     onLike(post.id);
+  };
+
+  const handleSubmitComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (commentText.trim()) {
+      onComment(post.id, commentText);
+      setCommentText('');
+      setShowAllComments(true); // Auto expand to see new comment
+    }
   };
 
   const timeAgo = (timestamp: number) => {
@@ -44,13 +56,20 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onUserClick }) => {
             className="w-8 h-8 rounded-full object-cover border border-gray-200 cursor-pointer"
             onClick={() => onUserClick(post.user)}
           />
-          <span 
-            className="font-semibold text-sm cursor-pointer hover:opacity-80"
-            onClick={() => onUserClick(post.user)}
-          >
-            {post.user.username}
-          </span>
-          <span className="text-gray-500 text-xs">• {timeAgo(post.timestamp)}</span>
+          <div className="flex flex-col justify-center">
+            <div className="flex items-center gap-1">
+              <span 
+                className="font-semibold text-sm cursor-pointer hover:opacity-80"
+                onClick={() => onUserClick(post.user)}
+              >
+                {post.user.username}
+              </span>
+              <span className="text-gray-500 text-xs">• {timeAgo(post.timestamp)}</span>
+            </div>
+            {post.location && (
+              <span className="text-xs text-gray-500 -mt-0.5 truncate max-w-[200px]">{post.location}</span>
+            )}
+          </div>
         </div>
         <button className="text-black">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
@@ -101,10 +120,44 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onUserClick }) => {
         <span className="text-sm whitespace-pre-wrap">{post.caption}</span>
       </div>
 
-      {/* Comments Link */}
+      {/* Comments Section */}
       <div className="px-3 pt-1">
-        <button className="text-gray-500 text-sm">View all {post.comments} comments</button>
+        {post.comments.length > 0 && (
+          <button 
+            className="text-gray-500 text-sm mb-1 cursor-pointer"
+            onClick={() => setShowAllComments(!showAllComments)}
+          >
+            {showAllComments ? 'Hide comments' : `View all ${post.comments.length} comments`}
+          </button>
+        )}
+        
+        <div className="space-y-1">
+          {(showAllComments ? post.comments : post.comments.slice(-2)).map(comment => (
+            <div key={comment.id} className="text-sm">
+              <span className="font-semibold mr-2">{comment.username}</span>
+              <span>{comment.text}</span>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Add Comment Input */}
+      <form onSubmit={handleSubmitComment} className="border-t border-gray-100 p-3 mt-2 flex items-center gap-2">
+        <input 
+          type="text" 
+          placeholder="Add a comment..." 
+          className="flex-1 text-sm outline-none placeholder-gray-400"
+          value={commentText}
+          onChange={(e) => setCommentText(e.target.value)}
+        />
+        <button 
+          type="submit" 
+          disabled={!commentText.trim()}
+          className="text-gek-500 font-semibold text-sm disabled:opacity-50 hover:text-gek-600 transition-colors"
+        >
+          Post
+        </button>
+      </form>
     </div>
   );
 };
