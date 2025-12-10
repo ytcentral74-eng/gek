@@ -229,4 +229,21 @@ const Profile: React.FC<ProfileProps> = ({ user, posts, isCurrentUser, onUpdateU
           </div>
         ))}
         {posts.length === 0 && (
-            <div className="col-span-3
+            <div className="col-span-3 py-20 text-center text-gray-500">
+                <div className="flex justify-center mb-4">
+                    <CameraIcon />
+                </div>
+                <h3 className="text-xl font-bold">No posts yet</h3>
+            </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Import UserIcon for fallback
+const UserIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+);
+
+export default Profile;
