@@ -124,8 +124,10 @@ const UploadModal: React.FC<UploadModalProps> = ({ user, onClose, onUpload }) =>
           ) : (
             <>
               {/* Image Preview (Left) */}
-              <div className="md:w-2/3 bg-gray-50 flex items-center justify-center bg-black">
-                <img src={selectedImage || ''} alt="Preview" className="max-w-full max-h-[500px] object-contain" />
+              <div className="md:w-2/3 bg-gray-50 flex flex-col relative bg-black">
+                <div className="flex-1 flex items-center justify-center relative overflow-hidden">
+                    <img src={selectedImage || ''} alt="Preview" className="max-w-full max-h-[500px] object-contain" />
+                </div>
               </div>
 
               {/* Edit Details (Right) */}

@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { User, Post, View, Comment } from './types';
+import { User, Post, View, Comment, Notification } from './types';
 import PostCard from './components/PostCard';
 import Profile from './components/Profile';
 import UploadModal from './components/UploadModal';
-import { HomeIcon, SearchIcon, PlusSquareIcon, HeartIcon, UserIcon, CameraIcon } from './components/Icons';
+import NotificationsView from './components/NotificationsView';
+import { HomeIcon, SearchIcon, PlusSquareIcon, HeartIcon, UserIcon, CameraIcon, LogOutIcon } from './components/Icons';
 
-// --- MOCK DATA ---
-const MOCK_USER: User = {
-  id: 'current-user',
-  username: 'gek_creator',
-  fullName: 'Creative Soul',
-  avatar: 'https://picsum.photos/150/150',
-  banner: 'https://picsum.photos/800/200',
-  bio: 'Digital explorer. 📸\nBuilding the future of social media with React.',
+// --- CONSTANTS ---
+const NEW_USER_TEMPLATE: Omit<User, 'id' | 'username' | 'fullName'> = {
+  avatar: '', // Will be generated based on username
+  banner: 'https://picsum.photos/seed/banner/800/200',
+  bio: 'Digital explorer. 📸\nBuilding the future of social media.',
   followers: 0,
   following: 0
 };
@@ -24,23 +22,84 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [view, setView] = useState<View>(View.LOGIN);
   const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Registry of all users who have ever logged in (persisted in localStorage)
+  const [registry, setRegistry] = useState<User[]>([]);
   
   // Track which user's profile we are viewing. If null, defaults to currentUser when in Profile View.
   const [profileUser, setProfileUser] = useState<User | null>(null);
 
-  // Auto login if we were doing real auth, but here we just handle view state
+  // Initialize data from local storage
   useEffect(() => {
-    // Simulating initialization
+    // Load Registry
+    const savedRegistry = localStorage.getItem('gek_registry');
+    if (savedRegistry) {
+      try {
+        setRegistry(JSON.parse(savedRegistry));
+      } catch (e) {
+        console.error("Failed to load registry", e);
+      }
+    }
+
+    // Load Current Session
+    const savedUser = localStorage.getItem('gek_user');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setCurrentUser(user);
+        setView(View.FEED);
+      } catch (e) {
+        console.error("Failed to restore user session", e);
+        localStorage.removeItem('gek_user');
+      }
+    }
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (usernameInput.trim()) {
-      setCurrentUser({ ...MOCK_USER, username: usernameInput });
-      setView(View.FEED);
+    const trimmedUsername = usernameInput.trim();
+    if (!trimmedUsername) return;
+
+    // Check if user already exists in registry
+    const existingUser = registry.find(u => u.username.toLowerCase() === trimmedUsername.toLowerCase());
+
+    let userToLogin: User;
+
+    if (existingUser) {
+      // Login existing user
+      userToLogin = existingUser;
+    } else {
+      // Create new user and save to registry
+      userToLogin = {
+        ...NEW_USER_TEMPLATE,
+        id: Date.now().toString(),
+        username: trimmedUsername,
+        fullName: trimmedUsername, // Default display name same as username
+        avatar: `https://picsum.photos/seed/${trimmedUsername}/150/150`, // Deterministic random avatar
+      };
+      
+      const newRegistry = [...registry, userToLogin];
+      setRegistry(newRegistry);
+      localStorage.setItem('gek_registry', JSON.stringify(newRegistry));
     }
+
+    setCurrentUser(userToLogin);
+    localStorage.setItem('gek_user', JSON.stringify(userToLogin));
+    setView(View.FEED);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('gek_user');
+    setCurrentUser(null);
+    setView(View.LOGIN);
+    setUsernameInput('');
+    setProfileUser(null);
+    setNotifications([]);
+    setSearchQuery('');
   };
 
   const handleCreatePost = (newPost: Post) => {
@@ -50,12 +109,37 @@ const App: React.FC = () => {
 
   const handleUpdateUser = (updatedUser: User) => {
     setCurrentUser(updatedUser);
+    localStorage.setItem('gek_user', JSON.stringify(updatedUser));
+    
+    // Also update the user in the registry so search results show the new details
+    const newRegistry = registry.map(u => u.id === updatedUser.id ? updatedUser : u);
+    setRegistry(newRegistry);
+    localStorage.setItem('gek_registry', JSON.stringify(newRegistry));
+  };
+
+  const createNotification = (type: 'LIKE' | 'COMMENT' | 'SHARE', post: Post, text?: string) => {
+    if (!currentUser) return;
+    
+    const newNotification: Notification = {
+      id: Date.now().toString() + Math.random(),
+      type,
+      user: currentUser,
+      postId: post.id,
+      postImage: post.imageUrl,
+      text,
+      timestamp: Date.now()
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
   };
 
   const handleLikePost = (postId: string) => {
     setPosts(prevPosts => prevPosts.map(p => {
       if (p.id === postId) {
         const isNowLiked = !p.likedByCurrentUser;
+        if (isNowLiked) {
+           createNotification('LIKE', p);
+        }
         return {
           ...p,
           likedByCurrentUser: isNowLiked,
@@ -79,6 +163,7 @@ const App: React.FC = () => {
 
     setPosts(prevPosts => prevPosts.map(p => {
       if (p.id === postId) {
+        createNotification('COMMENT', p, text);
         return {
           ...p,
           comments: [...p.comments, newComment]
@@ -86,6 +171,11 @@ const App: React.FC = () => {
       }
       return p;
     }));
+  };
+
+  const handleSharePost = (post: Post) => {
+    createNotification('SHARE', post);
+    alert('Post shared! (Action logged in notifications)');
   };
 
   const handleGoToProfile = (user: User) => {
@@ -97,10 +187,22 @@ const App: React.FC = () => {
   const getDisplayUser = () => {
     const target = profileUser || currentUser;
     if (!target || !currentUser) return null;
-    // If viewing self, return currentUser to ensure updates (like bio edits) are reflected immediately
     return target.id === currentUser.id ? currentUser : target;
   };
 
+  // Search Filtering Logic
+  const getFilteredSearch = () => {
+    const term = searchQuery.toLowerCase();
+    
+    // Search within the registry (all registered users)
+    const users = searchQuery 
+      ? registry.filter(u => u.username.toLowerCase().includes(term) || u.fullName.toLowerCase().includes(term))
+      : registry;
+      
+    return { users };
+  };
+
+  const { users: filteredUsers } = getFilteredSearch();
   const displayUser = getDisplayUser();
   const isOwnProfile = displayUser?.id === currentUser?.id;
 
@@ -132,11 +234,11 @@ const App: React.FC = () => {
               type="submit" 
               className="w-full bg-gek-600 hover:bg-gek-500 text-white font-semibold py-3 rounded-md transition-colors"
             >
-              Log In
+              Log In / Sign Up
             </button>
           </form>
           <div className="text-center text-sm text-gray-500">
-            <p>Don't have an account? <span className="text-gek-400 cursor-pointer">Sign up</span></p>
+             <p>Enter any username to create an account or sign back in.</p>
           </div>
         </div>
       </div>
@@ -156,12 +258,22 @@ const App: React.FC = () => {
           <NavItem icon={<HomeIcon active={view === View.FEED} />} label="Home" active={view === View.FEED} onClick={() => setView(View.FEED)} />
           <NavItem icon={<SearchIcon active={view === View.SEARCH} />} label="Search" active={view === View.SEARCH} onClick={() => setView(View.SEARCH)} />
           <NavItem icon={<PlusSquareIcon />} label="Create" onClick={() => setIsUploadOpen(true)} />
-          <NavItem icon={<HeartIcon />} label="Notifications" />
           <NavItem 
-            icon={<img src={currentUser.avatar} className="w-6 h-6 rounded-full border border-gray-200" />} 
+            icon={<HeartIcon filled={view === View.NOTIFICATIONS} />} 
+            label="Notifications" 
+            active={view === View.NOTIFICATIONS} 
+            onClick={() => setView(View.NOTIFICATIONS)} 
+          />
+          <NavItem 
+            icon={<img src={currentUser.avatar} className="w-6 h-6 rounded-full border border-gray-200 object-cover" />} 
             label="Profile" 
             active={view === View.PROFILE && isOwnProfile} 
             onClick={() => handleGoToProfile(currentUser)} 
+          />
+          <NavItem 
+            icon={<LogOutIcon />} 
+            label="Log out" 
+            onClick={handleLogout} 
           />
         </nav>
         <div className="px-4 py-6 mt-auto">
@@ -183,7 +295,9 @@ const App: React.FC = () => {
           <div className="md:hidden sticky top-0 bg-white/90 backdrop-blur-md z-30 border-b border-gray-200 flex justify-between items-center p-4">
              <h1 className="text-2xl font-bold bg-gradient-to-tr from-gek-400 to-purple-600 bg-clip-text text-transparent" style={{ fontFamily: 'cursive' }}>Gek</h1>
              <div className="flex gap-4">
-                <HeartIcon />
+                <button onClick={() => setView(View.NOTIFICATIONS)}>
+                  <HeartIcon filled={view === View.NOTIFICATIONS} />
+                </button>
              </div>
           </div>
 
@@ -195,6 +309,7 @@ const App: React.FC = () => {
                   post={post} 
                   onLike={handleLikePost}
                   onComment={handleComment} 
+                  onShare={handleSharePost}
                   onUserClick={handleGoToProfile}
                  />
                ))}
@@ -230,18 +345,54 @@ const App: React.FC = () => {
             <div className="p-4 w-full max-w-md mx-auto mt-4">
                 <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        <SearchIcon />
                     </div>
                     <input 
                         type="search" 
                         className="block w-full p-4 pl-10 text-sm bg-gray-100 border border-gray-200 rounded-lg placeholder-gray-500 text-black focus:border-gek-500 outline-none" 
-                        placeholder="Search" 
+                        placeholder="Search users..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="mt-8 text-center text-gray-500">
-                    <p>Search for users and friends.</p>
+                
+                <div className="mt-6 space-y-6">
+                    {/* Users Section */}
+                    <div>
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                            {searchQuery ? 'Users' : 'Registered Users'}
+                        </h3>
+                        <div className="space-y-3">
+                            {filteredUsers.map(user => (
+                                <div 
+                                  key={user.id} 
+                                  className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                                  onClick={() => handleGoToProfile(user)}
+                                >
+                                    <img src={user.avatar} className="w-10 h-10 rounded-full border border-gray-200 object-cover" />
+                                    <div className="flex flex-col">
+                                        <span className="font-semibold text-sm">{user.username}</span>
+                                        <span className="text-gray-500 text-xs">{user.fullName}</span>
+                                    </div>
+                                    {user.id === currentUser.id && (
+                                      <span className="ml-auto text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">You</span>
+                                    )}
+                                </div>
+                            ))}
+                            {filteredUsers.length === 0 && (
+                                <div className="text-center py-8 text-gray-400">
+                                   <p className="text-sm italic mb-2">No users found.</p>
+                                   <p className="text-xs">Log out and create a new account to see more people here!</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
+          )}
+
+          {view === View.NOTIFICATIONS && (
+            <NotificationsView notifications={notifications} />
           )}
         </div>
       </main>
@@ -251,6 +402,7 @@ const App: React.FC = () => {
         <button onClick={() => setView(View.FEED)}><HomeIcon active={view === View.FEED} /></button>
         <button onClick={() => setView(View.SEARCH)}><SearchIcon active={view === View.SEARCH} /></button>
         <button onClick={() => setIsUploadOpen(true)}><PlusSquareIcon /></button>
+        <button onClick={() => setView(View.NOTIFICATIONS)}><HeartIcon filled={view === View.NOTIFICATIONS} /></button>
         <button onClick={() => handleGoToProfile(currentUser)}><UserIcon active={view === View.PROFILE && isOwnProfile} /></button>
       </div>
 

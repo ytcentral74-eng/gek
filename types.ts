@@ -30,9 +30,20 @@ export interface Post {
   likedByCurrentUser?: boolean;
 }
 
+export interface Notification {
+  id: string;
+  type: 'LIKE' | 'COMMENT' | 'SHARE';
+  user: User; // The user who performed the action
+  postId?: string;
+  postImage?: string;
+  text?: string; // For comments
+  timestamp: number;
+}
+
 export enum View {
   LOGIN = 'LOGIN',
   FEED = 'FEED',
   PROFILE = 'PROFILE',
-  SEARCH = 'SEARCH'
+  SEARCH = 'SEARCH',
+  NOTIFICATIONS = 'NOTIFICATIONS'
 }
